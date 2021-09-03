@@ -1,0 +1,17 @@
+.DS_Store
+node_modules
+*.log
+.idea
+.metadata
+jdt.ls-java-project
+lerna-debug.log
+.nyc_output
+coverage
+download
+*ui-spec.ts
+*slow-spec.ts
+lib
+.vscode
+.cache
+package-lock.json
+!**/src/lib
