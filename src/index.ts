@@ -6,6 +6,11 @@ import FC from '@alicloud/fc2';
 import { checkEndpoint, getEndpointFromFcDefault } from './utils/endpoint';
 import { getDockerInfo } from './utils/docker';
 import { bytesToSize } from './utils/utils';
+import * as fs from 'fs'
+import {execSync} from 'child_process';
+import commandExists from 'command-exists';
+import os from 'os';
+import path from 'path';
 
 const DEFAULT_TIMEOUT = 600 * 1000;
 
@@ -128,5 +133,95 @@ Now the limit of RAM resource is ${MemTotal} bytes. To improve the limit, please
       Memory: memory,
       Ulimits: ulimits,
     };
+  }
+
+  /**
+   * 检查环境是否安装python，java，nodejs等语言环境
+   * @param {string} runtime
+   * @returns {[result, details]}
+   */
+  public async checkLanguage(runtime: string): Promise<[boolean, string]> {
+    var result = true;
+    var details = '';
+
+    if (runtime.includes('python')) {
+      if (!commandExists('pip')) {
+        result = false;
+        details += '- pip not installed.\n';
+      } else {
+        details += '- ' + execSync('pip --version').toString();
+      }
+
+      if (!commandExists(runtime)) {
+        result = false;
+        details += '- ' + runtime + ' not installed.\n';
+      } else {
+        details += '- ' + 'python ' + execSync(runtime + ' -c "import platform; print(platform.python_version())"').toString().trim();
+      }
+    }
+
+    if (runtime.includes('java')) {
+      if (!commandExists('mvn')) {
+        result = false;
+        details += '- maven not installed.\n';
+      } else {
+        details += '- ' + execSync('mvn --version').toString().split('\n')[0].replace(/\x1b|\[m|\[1m/g, '') + '\n';
+      }
+
+      if (!commandExists('java')) {
+        result = false;
+        details +=  '- ' + runtime + ' not installed.\n';
+      } else {
+        var javaCode = "class test {public static void main(String args[]) {System.out.print(Double.parseDouble(System.getProperty(\"java.specification.version\")));}}"
+        const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'foo-'));
+        var javaSourceFilePath = path.join(folder, 'test.java');
+        var javaClassFilePath = path.join(folder, 'test.class');
+        fs.writeFileSync(javaSourceFilePath, javaCode);
+        var version = execSync('javac ' + javaSourceFilePath + ' && java -classpath ' + folder + ' test').toString();
+        if (runtime.match('java' + version.split('.')[0])) {
+          details += '- java '+ version;
+        } else {
+          details += 'Required ' + runtime +', found java ' + version;
+        }
+        fs.unlinkSync(javaClassFilePath);
+        fs.unlinkSync(javaSourceFilePath);
+      }
+    }
+
+    if (runtime.includes('node')) {
+      var version = '';
+      if (!commandExists('node')) {
+        result = false;
+        details +=  runtime + ' not installed.\n';
+      } else {
+        version = execSync('node -v').toString().trim(); 
+        var num = runtime.replace('nodejs', '');
+        if (!version.match(new RegExp('v'+num+'.'))) {
+          result = false;
+          details += 'Required ' + runtime + ', found ' + version + '\n';
+        } else {
+          details += '- nodejs: '+ version;
+        }
+      }
+    }
+
+    return [result, details];
+  }
+
+  /**
+   * 检查环境是否安装docker环境
+   * @param {InputProps} inputs
+   * @returns {[result, details]}
+   */
+  public async checkDocker(): Promise<[boolean, string]> {
+    var result = true;
+    var details = '';
+    if (!commandExists('docker')) {
+      result = false;
+      details += 'Docker not installed.\n';
+    } else {
+      details += 'Docker installed.\n'
+    }
+    return [result, details];
   }
 }
