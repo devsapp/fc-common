@@ -5,13 +5,14 @@ vars: # [全局变量，提供给各个服务使用]
   domain: xxxx.yyy.com
 
 services:
-  component-test:
+  test:
     component: ${path(..)}  # 这里引入的是相对路径，正式配置替换成你自己的component名称即可 
     props:
       name: ${component-test2.props.name}
       otherInput: ${component-test2.output.hello}
       envshow: ${vars.domain}
-  component-test2:
+      memorySize: 128
+  test2:
     component: ${path(..)}  # 这里引入的是相对路径，正式配置替换成你自己的component名称即可 
     props:
       name: hello
