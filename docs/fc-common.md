@@ -7,12 +7,20 @@
 #### 参数：
 
 ```typescript
-inputs: InputProps {
-  props: any {
-    region: string,
-    timeout: number,
-    credentials: ICredentials
-  }
+{
+  credentials?: {
+    AccountID: string;
+    AccessKeyID: string;
+    AccessKeySecret: string;
+    SecurityToken?: string;
+  },
+  project?: {
+    access?: string
+  },
+  props: {
+    region: string;
+    timeout?: number;
+	},
 }
 ```
 
@@ -20,18 +28,8 @@ inputs: InputProps {
 
 - 获取endpoint失败时：无返回 ｜ 返回undefined
 
-- 成功返回FC：
+- 成功返回FC
 
-  ```tsx
-  new FC(credentials.AccountID, {
-    accessKeyID: credentials.AccessKeyID,
-    accessKeySecret: credentials.AccessKeySecret,
-    securityToken: credentials.SecurityToken,
-    region: region,
-    timeout: timeout * 1000 || DEFAULT_TIMEOUT,
-    endpointFromCredentials,
-  })
-  ```
 
 #### 示例：
 
@@ -50,8 +48,6 @@ test:
   headers: {}
 ```
 
-
-
 ## getCredentials
 
 获取 credentials 值
@@ -61,9 +57,15 @@ test:
 #### 参数：
 
 ```typescript
-inputs: InputProps {
-  props: any {
-    credentials: ICredentials
+{
+  credentials?: {
+    AccountID: string;
+    AccessKeyID: string;
+    AccessKeySecret: string;
+    SecurityToken?: string;
+  },
+  project?: {
+    access?: string
   }
 }
 ```
@@ -72,8 +74,13 @@ inputs: InputProps {
 
 ```tsx
 {
-  access: res?.Alias,
-  credentials,
+  access: string;
+  credentials: {
+    AccountID: string;
+    AccessKeyID: string;
+    AccessKeySecret: string;
+    SecurityToken?: string;
+  }
 }
 ```
 
@@ -112,10 +119,10 @@ test:
 
   ```tsx
   {
-    CpuPeriod,
-    CpuQuota,
-    Memory,
-    Ulimits,
+    CpuPeriod: number;
+    CpuQuota: number;
+    Memory: number;
+    Ulimits: any,
   }
   ```
 
@@ -136,5 +143,73 @@ test:
     - Name: nproc
       Soft: 1024
       Hard: 1024
+```
+
+
+
+## checkLanguage
+
+根据runtime检测本地环境是否符合运行要求
+
+### checkLuanguage(runtime: string)
+
+#### 参数：
+
+- turntime: string, [ python | java | node ] only.
+
+#### 返回：
+
+```tsx
+[
+  result: boolean,
+  details: string
+]
+```
+
+#### 示例：
+
+```bash
+# bash with s.yaml
+$ s test checkLanguage
+[2021-09-18T16:22:27.842] [INFO ] [S-CLI] - Start ...
+test:
+  - true
+  - >-
+    - pip 21.2.4 from
+    /Users/linjiaxiang/opt/anaconda3/lib/python3.9/site-packages/pip (python
+    3.9)
+
+    - python 3.9.4
+```
+
+
+
+## checkDocker
+
+检测本地docker是否正常运行
+
+### checkDocker()
+
+#### 参数：空
+
+#### 返回：
+
+```tsx
+[
+  result: boolean,
+  details: string
+]
+```
+
+#### 示例：
+
+```bash
+# bash with s.yaml
+$ s test checkDocker  
+[2021-09-18T16:24:58.908] [INFO ] [S-CLI] - Start ...
+test:
+  - true
+  - |
+    Docker installed.
 ```
 
