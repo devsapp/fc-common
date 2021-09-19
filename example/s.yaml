@@ -12,9 +12,16 @@ services:
       otherInput: ${component-test2.output.hello}
       envshow: ${vars.domain}
       memorySize: 128
-  test2:
-    component: ${path(..)}  # 这里引入的是相对路径，正式配置替换成你自己的component名称即可 
+      runtime: python
+  dev:
+    component: devsapp/fc-common@dev  # test dev version
     props:
       name: hello
       otherInput: world
       envshow: ${env(PATH)}
+  pub:
+    component: devsapp/fc-common  # test published version
+    props:
+      envshow: ${vars.domain}
+      memorySize: 128
+      runtime: python
