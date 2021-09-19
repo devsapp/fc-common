@@ -25,6 +25,8 @@ s test -h
 - [makeFcClient](./docs/fc-common.md/#makeFcClient) 获取 fc clinet
 - [getCredentials](./docs/fc-common.md/#getCredentials) 获取 credentials 值
 - [genContainerResourcesLimitConfig](./docs/fc-common.md/#genContainerResourcesLimitConfig) 生成容器资源限制配置
+- [checkLanguage](./docs/fc-common.md/#checkLanguage) 根据runtime检测本地环境是否符合运行要求
+- [checkDocker](./docs/fc-common.md/#checkDocker) 检测本地docker是否正常运行
 
 ### 应用编排使用方式
 
