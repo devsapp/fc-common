@@ -1,4 +1,5 @@
 import { ICredentials, InputProps } from './common/entity';
+import './utils/fc-client';
 export default class FcCommonComponent {
     /**
      * 获取 fc client
