@@ -36,7 +36,7 @@ export function extractRegion(endpoint: string): string | null {
 }
 
 function extract(regex: RegExp, endpoint: string): any {
-  var matchs = endpoint.match(regex);
+  const matchs = endpoint.match(regex);
   if (matchs) {
     return matchs[1];
   }

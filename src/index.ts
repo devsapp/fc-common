@@ -6,11 +6,12 @@ import FC from '@alicloud/fc2';
 import { checkEndpoint, getEndpointFromFcDefault } from './utils/endpoint';
 import { getDockerInfo } from './utils/docker';
 import { bytesToSize } from './utils/utils';
-import * as fs from 'fs'
-import {execSync} from 'child_process';
+import * as fs from 'fs';
+import { execSync } from 'child_process';
 import commandExists from 'command-exists';
 import os from 'os';
 import path from 'path';
+import './utils/fc-client';
 
 const DEFAULT_TIMEOUT = 600 * 1000;
 
@@ -20,7 +21,7 @@ export default class FcCommonComponent {
    * @param {InputProps} inputs
    * @returns
    */
-  public async makeFcClient(inputs: InputProps) {
+  async makeFcClient(inputs: InputProps) {
     logger.debug(`input: ${JSON.stringify(inputs.props)}`);
     const region: string = inputs?.props?.region;
     const timeout: number = inputs?.props?.timeout;
@@ -28,7 +29,7 @@ export default class FcCommonComponent {
       logger.error('Please provide region in your props.');
       return;
     }
-    const credentials: ICredentials = (await this.getCredentials(inputs)).credentials;
+    const { credentials } = await this.getCredentials(inputs);
 
     const endpointFromCredentials: string = credentials.endpoint;
     const endpointFromFcDefault: string = await getEndpointFromFcDefault();
@@ -53,7 +54,7 @@ export default class FcCommonComponent {
       accessKeyID: credentials.AccessKeyID,
       accessKeySecret: credentials.AccessKeySecret,
       securityToken: credentials.SecurityToken,
-      region: region,
+      region,
       timeout: timeout * 1000 || DEFAULT_TIMEOUT,
       endpointFromCredentials,
     });
@@ -64,14 +65,14 @@ export default class FcCommonComponent {
    * @param {InputProps} inputs
    * @returns {ICredentials}
    */
-  public async getCredentials(inputs: InputProps): Promise<{ access: string; credentials: ICredentials }> {
+  async getCredentials(inputs: InputProps): Promise<{ access: string; credentials: ICredentials }> {
     if (!_.isEmpty(inputs?.credentials)) {
       return {
         access: inputs?.project?.access,
         credentials: inputs.credentials,
       };
     }
-    const res: any = await core.getCredentials(inputs?.project?.access);
+    const res: any = await core.getCredential(inputs?.project?.access);
     const credentials: ICredentials = {
       AccountID: res?.AccountID,
       AccessKeyID: res?.AccessKeyID,
@@ -89,7 +90,7 @@ export default class FcCommonComponent {
    * @param memorySize 内存大小
    * @returns HostConfig define by DockerEngineAPI
    */
-  public async genContainerResourcesLimitConfig(memorySize: number): Promise<any> {
+  async genContainerResourcesLimitConfig(memorySize: number): Promise<any> {
     // memorySize = memorySize.props.memorySize; // for test
 
     if (memorySize < 128) {
@@ -108,18 +109,18 @@ export default class FcCommonComponent {
     const isWin: boolean = process.platform === 'win32';
     const memoryCoreRatio: number = memorySize > 3072 ? 1 / 2048 : 2 / 3072; // 内存核心比，弹性实例2C/3G，性能实例1C/2G
 
-    const cpuPeriod: number = 6400;
+    const cpuPeriod = 6400;
     let cpuQuota: number = Math.ceil(cpuPeriod * memoryCoreRatio * memorySize);
     cpuQuota = Math.min(cpuQuota, cpuPeriod * NCPU); // 最高不超过限制
     cpuQuota = Math.max(cpuQuota, cpuPeriod); // 按照内存分配cpu配额时, 最低为100%，即1Core
 
-    let memory = memorySize * 1024 * 1024; //bytes
+    let memory = memorySize * 1024 * 1024; // bytes
     if (memory > MemTotal) {
       memory = MemTotal;
       logger.warning(`The memory config exceeds the docker limit. The memory actually allocated: ${bytesToSize(memory)}.
 Now the limit of RAM resource is ${MemTotal} bytes. To improve the limit, please refer: https://docs.docker.com/desktop/${
-        isWin ? 'windows' : 'mac'
-      }/#resources.`);
+  isWin ? 'windows' : 'mac'
+}/#resources.`);
     }
 
     const ulimits: any = [
@@ -140,23 +141,23 @@ Now the limit of RAM resource is ${MemTotal} bytes. To improve the limit, please
    * @param {string} runtime
    * @returns {[result, details]}
    */
-  public async checkLanguage(runtime: string): Promise<[boolean, string]> {
-    var result = true;
-    var details = '';
+  async checkLanguage(runtime: string): Promise<[boolean, string]> {
+    let result = true;
+    let details = '';
 
     if (runtime.includes('python')) {
       if (!commandExists('pip')) {
         result = false;
         details += '- pip not installed.\n';
       } else {
-        details += '- ' + execSync('pip --version').toString();
+        details += `- ${ execSync('pip --version').toString()}`;
       }
 
       if (!commandExists(runtime)) {
         result = false;
-        details += '- ' + runtime + ' not installed.\n';
+        details += `- ${ runtime } not installed.\n`;
       } else {
-        details += '- ' + 'python ' + execSync(runtime + ' -c "import platform; print(platform.python_version())"').toString().trim();
+        details += `- python ${ execSync(`${runtime } -c "import platform; print(platform.python_version())"`).toString().trim()}`;
       }
     }
 
@@ -165,23 +166,23 @@ Now the limit of RAM resource is ${MemTotal} bytes. To improve the limit, please
         result = false;
         details += '- maven not installed.\n';
       } else {
-        details += '- ' + execSync('mvn --version').toString().split('\n')[0].replace(/\x1b|\[m|\[1m/g, '') + '\n';
+        details += `- ${ execSync('mvn --version').toString().split('\n')[0].replace(/\x1b|\[m|\[1m/g, '') }\n`;
       }
 
       if (!commandExists('java')) {
         result = false;
-        details +=  '- ' + runtime + ' not installed.\n';
+        details += `- ${ runtime } not installed.\n`;
       } else {
-        var javaCode = "class test {public static void main(String args[]) {System.out.print(Double.parseDouble(System.getProperty(\"java.specification.version\")));}}"
+        const javaCode = 'class test {public static void main(String args[]) {System.out.print(Double.parseDouble(System.getProperty("java.specification.version")));}}';
         const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'foo-'));
-        var javaSourceFilePath = path.join(folder, 'test.java');
-        var javaClassFilePath = path.join(folder, 'test.class');
+        const javaSourceFilePath = path.join(folder, 'test.java');
+        const javaClassFilePath = path.join(folder, 'test.class');
         fs.writeFileSync(javaSourceFilePath, javaCode);
-        var version = execSync('javac ' + javaSourceFilePath + ' && java -classpath ' + folder + ' test').toString();
-        if (runtime.match('java' + version.split('.')[0])) {
-          details += '- java '+ version;
+        const version = execSync(`javac ${ javaSourceFilePath } && java -classpath ${ folder } test`).toString();
+        if (runtime.match(`java${ version.split('.')[0]}`)) {
+          details += `- java ${ version}`;
         } else {
-          details += 'Required ' + runtime +', found java ' + version;
+          details += `Required ${ runtime }, found java ${ version}`;
         }
         fs.unlinkSync(javaClassFilePath);
         fs.unlinkSync(javaSourceFilePath);
@@ -189,18 +190,18 @@ Now the limit of RAM resource is ${MemTotal} bytes. To improve the limit, please
     }
 
     if (runtime.includes('node')) {
-      var version = '';
+      let version = '';
       if (!commandExists('node')) {
         result = false;
-        details +=  runtime + ' not installed.\n';
+        details += `${runtime } not installed.\n`;
       } else {
-        version = execSync('node -v').toString().trim(); 
-        var num = runtime.replace('nodejs', '');
-        if (!version.match(new RegExp('v'+num+'.'))) {
+        version = execSync('node -v').toString().trim();
+        const num = runtime.replace('nodejs', '');
+        if (!version.match(new RegExp(`v${num}.`))) {
           result = false;
-          details += 'Required ' + runtime + ', found ' + version + '\n';
+          details += `Required ${ runtime }, found ${ version }\n`;
         } else {
-          details += '- nodejs: '+ version;
+          details += `- nodejs: ${ version}`;
         }
       }
     }
@@ -213,14 +214,14 @@ Now the limit of RAM resource is ${MemTotal} bytes. To improve the limit, please
    * @param {InputProps} inputs
    * @returns {[result, details]}
    */
-  public async checkDocker(): Promise<[boolean, string]> {
-    var result = true;
-    var details = '';
+  async checkDocker(): Promise<[boolean, string]> {
+    let result = true;
+    let details = '';
     if (!commandExists('docker')) {
       result = false;
       details += 'Docker not installed.\n';
     } else {
-      details += 'Docker installed.\n'
+      details += 'Docker installed.\n';
     }
     return [result, details];
   }
