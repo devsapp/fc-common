@@ -13,7 +13,7 @@ type LogColor =
   | 'gray';
 
 export default class ComponentLogger {
-  static CONTENT = '';
+  static CONTENT = 'fc-common';
   static setContent(content) {
     ComponentLogger.CONTENT = content;
   }
