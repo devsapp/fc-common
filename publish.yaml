@@ -2,7 +2,7 @@ Type: Component
 Name: fc-common
 Provider:
   - 其它
-Version: 0.0.2
+Version: 0.0.3
 Description: fc 系列组件依赖的公共能力
 HomePage: https://www.serverless-devs.com
 Tags: #标签详情
