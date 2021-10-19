@@ -56,7 +56,7 @@ export default class FcCommonComponent {
       securityToken: credentials.SecurityToken,
       region,
       timeout: timeout * 1000 || DEFAULT_TIMEOUT,
-      endpointFromCredentials,
+      endpoint,
     });
   }
 
