@@ -2,9 +2,13 @@ Type: Component
 Name: fc-common
 Provider:
   - 其它
-Version: 0.0.4
+Version: dev
 Description: fc 系列组件依赖的公共能力
 HomePage: https://www.serverless-devs.com
 Tags: #标签详情
   - 模板
 Category: 其它
+
+# gh release delete dev -y
+# git push origin :refs/tags/dev
+# gh release create dev --notes "dev release" --target support-exec-in-container --title "Release dev"
