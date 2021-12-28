@@ -77,6 +77,7 @@ export default class FcCommonComponent {
       AccountID: res?.AccountID,
       AccessKeyID: res?.AccessKeyID,
       AccessKeySecret: res?.AccessKeySecret,
+      SecurityToken: res?.SecurityToken,
       endpoint: res?.endpoing,
     };
     return {
